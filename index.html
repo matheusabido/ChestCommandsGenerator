@@ -1,0 +1,146 @@
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChestCommands Generator</title>
+    <style>
+        * {
+            font-family: Arial;
+        }
+    </style>
+</head>
+<body>
+    <div id="sel">
+        <br>
+        <h3 style="margin-top: 1.2em">Selected Item: None</h3>
+    </div>
+    <input type="text">
+    <script src="./scripts/manager.js"></script>
+    <div id="items"></div>
+    <br>
+    <h1>Configurações</h1>
+    <input id="name" type="text" placeholder="name"> <br> <br>
+    <textarea id="lore" placeholder="lore"></textarea> <br> <br>
+    <input id="command" type="text" placeholder="command">
+    <br> <br>
+    <input id="rows" type="number" min="1" max="6" placeholder="rows" style="height: 2em; width: 4em;">
+    <input id="x" type="number" placeholder="x" value="0" max="8" style="height: 2em; width: 4em;">
+    <input id="y" type="number" placeholder="y" value="0" style="height: 2em; width: 4em;">
+    <br>
+    <br>
+    <div id="slots"></div>
+    <br>
+    <button onclick="generate()">Generate</button>
+    <br>
+    <textarea id="result" cols="30" rows="10" readonly></textarea>
+    <script>
+        const input = document.querySelector('input');
+        const rows = document.getElementById('rows');
+        const slots = document.getElementById('slots');
+        const x = document.getElementById('x');
+        const y = document.getElementById('y');
+
+        let config = {};
+
+        x.oninput = () => {
+            if (x.value < 0) x.value = 0;
+            else if (x.value > x.max) x.value = x.max;
+            update();
+        }
+
+        y.oninput = () => {
+            if (y.value < 0) y.value = 0;
+            else if (y.value > y.max) y.value = y.max;
+            update();
+        }
+
+        function generate() {
+            const name = document.getElementById('name').value;
+            const lore = document.getElementById('lore').value;
+            const comand = document.getElementById('command');
+            if (rows.value === '' || name === '') {
+                alert('Preencha os campos corretamente');
+                return;
+            }
+            let r = [];
+            for(let line of lore.split('\n')) {
+                r.push(`- '${line}'`);
+            }
+            const result = `NAME: ${name}\nLORE:\n${r.join('\n')}\nCOMMAND: '${command.value}'\nMATERIAL: Insert here\nPOSITION-X: ${Number.parseInt(x.value) + 1}\nPOSITION-Y: ${Number.parseInt(y.value) + 1}`;
+            document.getElementById('result').value = result;
+        }
+
+        function update() {
+            let slot = Number.parseInt(x.value) + Number.parseInt(y.value) * 9;
+            const label = document.getElementById(slot);
+            for (let label of getColoredLabels()) label.style.color = 'black';
+            if (label !== null) {
+                label.style.color = "red";
+            }
+        }
+
+        function getColoredLabels() {
+            let a = [];
+            for (let label of document.querySelectorAll('label'))
+                if (label.style.color === 'red') a.push(label);
+            return a;
+        }
+
+        rows.oninput = () => {
+            if (rows.value > 6) rows.value = 6;
+            else if (rows.value < 1) rows.value = 1;
+            while (slots.children.length > 0) for (let child of slots.children) child.remove();
+            let r = rows.value;
+            y.max = r - 1;
+            for (let i = 0; i < 9 * r; i++) {
+                let label = document.createElement('label');
+                label.innerText = i < 10 ? `0${i}` : i;
+                label.innerText += " "
+                label.id = i;
+                slots.appendChild(label);
+                if ((i + 1) % 9 === 0) {
+                    slots.appendChild(document.createElement('br'));
+                }
+            }
+        }
+
+        let selectedItem = undefined;
+        input.oninput = () => {
+            const result = search(input.value);
+            if (result.length === 1) {
+                selectedItem = result[0];
+                return;
+            } else selectedItem = undefined;
+            const itemsDiv = document.getElementById('items');
+            while (itemsDiv.children.length > 0) {
+                for (let child of itemsDiv.children) child.remove();
+            }
+            if (input.value === '') return;
+            for (let i in result) {
+                let r = result[i];
+                const nome = r.name;
+                if (nome === input.value) selectedItem = r;
+                const texture = r.texture;
+                const a = document.createElement('a');
+                a.innerHTML = nome + "<br>";
+                itemsDiv.appendChild(a);
+            }
+        }
+
+        function render() {
+            if (selectedItem !== undefined) {
+                document.querySelector('h3').innerText = "Selected Item: " + selectedItem.name;
+            } else document.querySelector('h3').innerText = "Selected Item: None";
+            config['name'] = document.getElementById('name').value;
+            config['lore'] = document.getElementById('lore').value;
+            config['command'] = document.getElementById('command').value;
+            config['x'] = document.getElementById('x').value;
+            config['y'] = document.getElementById('y').value;
+            requestAnimationFrame(render);
+        }
+
+        requestAnimationFrame(render);
+    </script>
+</body>
+</html>
